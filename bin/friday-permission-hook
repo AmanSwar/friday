@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+"""Claude Code PermissionRequest hook: lets Aman answer a permission prompt by voice (or from Friday's
+panel). Asks fridayd and waits; prints allow/deny only if he answered. On no answer, a timeout, a
+session Friday doesn't supervise, or fridayd not running, it prints nothing and the normal dialog shows.
+Installed by scripts/install-claude-hooks.py with a 120 s timeout."""
+import json
+import sys
+import urllib.request
+
+
+def main() -> None:
+    if __import__("os").environ.get("FRIDAY_INTERNAL"):   # Friday's own headless claude (claude_ask): not his session
+        return
+    try:
+        ev = json.load(sys.stdin)
+    except Exception:
+        return
+    if ev.get("tool_name") == "AskUserQuestion":   # a question with options, not allow/deny: Claude Code's own UI
+        return
+    keys = ("session_id", "cwd", "transcript_path", "tool_name", "tool_input", "permission_suggestions")
+    body = json.dumps({k: ev.get(k) for k in keys}).encode()
+    try:
+        req = urllib.request.Request("http://127.0.0.1:8765/permission", data=body,
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=115) as resp:
+            ans = json.loads(resp.read() or b"{}")
+    except Exception:
+        return
+    decision = ans.get("decision")
+    if decision == "allow":
+        out = {"behavior": "allow"}
+        if ans.get("always") and ev.get("permission_suggestions"):
+            out["updatedPermissions"] = ev["permission_suggestions"][:1]   # what "always allow" would add
+    elif decision == "deny":
+        out = {"behavior": "deny", "message": ans.get("message") or "Aman said no (by voice, through Friday)."}
+    else:
+        return
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PermissionRequest", "decision": out}}))
+
+
+main()

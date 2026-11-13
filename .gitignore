@@ -1,0 +1,14 @@
+# secrets and local state
+extensions/brave/config.js
+
+# Hermes fork: its own private repo (AmanSwar/hermes-agent), cloned into oss/hermes-agent
+oss/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# macOS
+.DS_Store

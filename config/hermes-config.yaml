@@ -1,0 +1,46 @@
+# Friday's Hermes config, installed to ~/.friday/config.yaml by scripts/install.sh.
+# ${ANTHROPIC_BASE_URL} is substituted at install time from ~/.friday/.env.
+
+model:
+  provider: custom:friday-proxy
+  default: claude-sonnet-5-5
+
+providers:
+  friday-proxy:
+    name: Claude (via proxy)
+    api: ${ANTHROPIC_BASE_URL}
+    # key_cmd (not key_env): Hermes then sends Authorization: Bearer, which the proxy requires when
+    # streaming; with key_env it sends x-api-key and every streamed request gets a 401.
+    key_cmd: "@REPO@/bin/friday-token"
+    transport: anthropic_messages
+    catalog_provider: anthropic
+    default_model: claude-sonnet-5-5
+
+plugins:
+  enabled:
+    - friday
+
+agent:
+  reasoning_effort: high   # Sonnet 5.5 adaptive thinking at high (explicit; the API default today)
+memory:
+  memory_char_limit: 4000   # Friday's notes (~/code/personal/friday/MEMORY.md)
+  user_char_limit: 3500     # who Aman is (~/code/personal/friday/USER.md)
+prompt_caching:
+  cache_ttl: 5m            # cron jobs and other API sessions: they call every few seconds while running
+  session_ttl:
+    friday-voice: 1h       # your voice turns are often >5 min apart; 1h keeps the context cached between them
+    friday-b-*: 1h         # every Friday branch (thread) session
+  top_level: true          # 1h requests use one request-level cache_control: our proxy downgrades block-level 1h markers to 5m
+compression:
+  threshold_tokens: 60000  # summarise older turns once a conversation passes 60K tokens (was ~500K)
+  prepare_ahead: true      # write the summary in the background near 60K, so a voice turn doesn't wait 1-2 min for it
+browser:
+  # Off: on macOS 27 Brave's profile folder is readable only by Brave, so Hermes's profile copy fails.
+  # Friday reaches Aman's signed-in Brave through the Friday extension instead (brave_* tools).
+  use_real_profile: false
+
+gateway:
+  api_server:
+    enabled: true          # local API for the push-to-talk helper (fridayd /ask); key in ~/.friday/.env
+    host: 127.0.0.1
+    port: 8652             # not 8642, so it never collides with your own ~/.hermes gateway

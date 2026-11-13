@@ -1,0 +1,48 @@
+# fridayd settings (~/.friday/friday.toml). Every key is optional; these are the defaults.
+
+[speech]
+engine = "remote"                                    # remote (laptop GPU, Mac fallback) | mlx (Mac GPU) | kokoro | piper
+remote_url = "http://127.0.0.1:8091"                 # laptop voice server, through the SSH tunnel (scripts/laptop-voice.sh)
+model = "mlx-community/Qwen3-TTS-12Hz-0.6B-Base-bf16"         # full precision, 4.1 GB peak (8-bit drifted; 1.7B needed 6 GB); clones the reference below
+ref_audio = "~/.friday/voices/friday-ref.wav"                  # Friday's voice: laid-back, friendly (designed with VoiceDesign, picked by ear)
+ref_text = "Hey, so, quick update. The AWS run finished, and it passed, so that's nice. SGLang's still going through the sweep. Nothing you need to do right now, though. I'll let you know if that changes."
+seed = 7
+# To design a new voice: model = "mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-8bit" and instruct = "<description>",
+# then save a sentence you like as the reference (VoiceDesign alone changes voice every sentence).
+kokoro_voice = "af_heart"                            # for engine = "kokoro"
+speed = 1.15
+int8 = true
+piper_voice = "en_GB-alan-medium"                    # for engine = "piper"
+length_scale = 0.85
+
+[presence]
+away_after_s = 300               # no keyboard/mouse for this long = away from the desk
+mic_hold_s = 90                  # mic busy longer than this = on a call: notify instead of speaking
+
+[proactive]                      # Friday speaks first when you come back (a turn in the voice conversation)
+welcome_back_after_s = 900       # back after 15+ min with alerts held: greet + recap, ask if you want details
+quiet_return_s = 7200            # back after 2+ h with nothing held: a short welcome back
+morning_after_s = 14400          # first return of the day after 4+ h away: good-morning briefing...
+morning_from_hour = 5            # ...from 5 am on
+browser_help = true              # offer help when you're working hard to understand a page in Brave
+browser_help_cooldown_s = 1200   # at most one such offer every 20 minutes (and once per page per day)
+
+[signal]                         # Signal is private: someone may be in the room
+announce = "quiet"               # quiet: never interrupts, never says what anyone wrote; a greeting may add who
+                                 # messaged. off: never mentions Signal. full: speaks each message as it arrives
+
+[ducking]                        # lower other audio while Friday talks
+enabled = true
+level = 10                       # Spotify / Apple Music drop to this volume; media in Brave tabs to 10% of theirs
+restore_after_s = 1.2            # back up this long after she stops
+apps = ["spotify", "music", "brave"]
+
+[alerts]
+model = "claude-sonnet-5-5"
+effort = "low"
+debounce_s = 20
+
+[phone]
+command = ""                     # how to reach the phone when away, e.g. "friday-phone"; text is the last arg
+
+[pronunciations]                 # extra respellings, merged over the built-in list (Aman = "Amun" is built in)

@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+"""Claude Code SessionStart hook: tells fridayd a session started (id, folder, name), and names it if
+Friday just dispatched a session in that folder ("master_newthing"). Fast: 2 s at most, silent on errors."""
+import json
+import sys
+import urllib.request
+
+
+def main() -> None:
+    if __import__("os").environ.get("FRIDAY_INTERNAL"):   # Friday's own headless claude (claude_ask): not his session
+        return
+    try:
+        ev = json.load(sys.stdin)
+    except Exception:
+        return
+    body = json.dumps({k: ev.get(k) for k in ("session_id", "cwd", "transcript_path", "session_title", "source")}).encode()
+    try:
+        req = urllib.request.Request("http://127.0.0.1:8765/session-start", data=body,
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            ans = json.loads(resp.read() or b"{}")
+    except Exception:
+        return
+    if ans.get("title") and not ev.get("session_title"):
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "sessionTitle": ans["title"]}}))
+
+
+main()

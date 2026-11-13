@@ -1,0 +1,19 @@
+name: friday
+version: "0.1.0"
+description: "Friday: watch and drive your Claude Code master sessions, hear every reply through fridayd's local voice."
+author: Aman
+provides_tools:
+  - claude_sessions
+  - claude_status
+  - claude_ask
+  - claude_send
+  - friday_alerts
+  - friday_hush
+  - signal_send
+  - signal_recent
+  - contact_style
+  - slack_catchup
+  - slack_read
+  - slack_search
+provides_hooks:
+  - post_llm_call

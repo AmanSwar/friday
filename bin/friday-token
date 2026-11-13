@@ -1,0 +1,9 @@
+#!/bin/sh
+# Print the Claude API token for Hermes' key_cmd (which makes Hermes send it as a Bearer token,
+# the only form the proxy accepts for streaming). Source: ~/.friday/.env, else the env block of
+# ~/.claude/settings.json (where Claude Code itself gets it).
+env_file="${FRIDAY_HOME:-$HOME/.friday}/.env"
+tok=$(sed -n 's/^ANTHROPIC_AUTH_TOKEN=//p' "$env_file" 2>/dev/null | head -1)
+[ -n "$tok" ] || tok=$(/usr/bin/python3 -c 'import json,os; print(json.load(open(os.path.expanduser("~/.claude/settings.json")))["env"]["ANTHROPIC_AUTH_TOKEN"])' 2>/dev/null)
+[ -n "$tok" ] || exit 1
+printf '%s\n' "$tok"

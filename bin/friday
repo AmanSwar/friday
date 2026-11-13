@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Friday: run the Hermes fork against ~/.friday, never touching ~/.hermes.
+#   friday              chat (Hermes TUI)
+#   friday <args...>    any hermes subcommand (gateway, cron, doctor, ...), e.g. `friday chat -q "..."`
+set -euo pipefail
+FRIDAY_REPO="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export HERMES_HOME="${FRIDAY_HOME:-$HOME/.friday}"
+export HERMES_RUNTIME_DIR="$HERMES_HOME/tools"
+unset VIRTUAL_ENV PYTHONHOME
+cd "$FRIDAY_REPO/oss/hermes-agent"
+# activate first re-checks Hermes's dependencies, which needs the network (it re-resolves some packages
+# against GitHub). When that fails (8 Nov 2026: a GitHub 504), run on what's already installed instead
+# of not starting Friday at all. hermes_compose_env only reads the installed state.
+# shellcheck disable=SC1091
+if ! source ./activate >/dev/null 2>"$HERMES_HOME/logs/activate.err"; then
+    echo "friday: Hermes's dependency check failed (see $HERMES_HOME/logs/activate.err); using the installed environment" >&2
+    # shellcheck disable=SC1091
+    . ./scripts/_activation.sh
+    _env="$(hermes_compose_env "$PWD" sh)" || { cat "$HERMES_HOME/logs/activate.err" >&2; exit 1; }
+    hermes_apply_env "$_env"
+fi
+exec python "$FRIDAY_REPO/oss/hermes-agent/hermes" "$@"
